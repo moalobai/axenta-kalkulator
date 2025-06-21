@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>AXENTA Kalkulator</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="icon.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    input, label, button { display: block; margin: 10px 0; max-width: 300px; width: 100%; }
+    .result { margin-top: 20px; font-weight: bold; background: white; padding: 15px; border-radius: 8px; }
+    img { max-width: 150px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <img src="icon.png" alt="AXENTA Logo">
+  <h1>AXENTA Trockenbau-Kalkulator</h1>
+
+  <label>Materialkosten (€): <input type="number" id="material"></label>
+  <label>Anfahrt (km einfach): <input type="number" id="km"></label>
+  <label>Stundenaufwand: <input type="number" id="stunden"></label>
+  <label>Stundenlohn (€): <input type="number" id="lohn" value="55"></label>
+  <label>Aufwand (z. B. Etage) (€): <input type="number" id="aufwand"></label>
+  <label>Verpflegung (€): <input type="number" id="verpflegung"></label>
+  <label>Angebotserstellung (€): <input type="number" id="angebot"></label>
+  <label>Externe Kosten (€): <input type="number" id="extern"></label>
+  <label>Mehraufwand (€): <input type="number" id="extra"></label>
+  <label>Helferanteil (% vom Gewinn): <input type="number" id="helfer" value="50"></label>
+  <label>Helfer nach Steuer: <input type="checkbox" id="helfer_nach"></label>
+  <label>Steuersatz (%): <input type="number" id="steuer" value="20"></label>
+
+  <button onclick="rechnen()">Kalkulieren</button>
+  <div class="result" id="output"></div>
+
+  <script>
+    function rechnen() {
+      const material = +document.getElementById('material').value || 0;
+      const km = +document.getElementById('km').value || 0;
+      const stunden = +document.getElementById('stunden').value || 0;
+      const lohn = +document.getElementById('lohn').value || 0;
+      const aufwand = +document.getElementById('aufwand').value || 0;
+      const verpflegung = +document.getElementById('verpflegung').value || 0;
+      const angebot = +document.getElementById('angebot').value || 0;
+      const extern = +document.getElementById('extern').value || 0;
+      const extra = +document.getElementById('extra').value || 0;
+      const helfer = (+document.getElementById('helfer').value || 0) / 100;
+      const steuer = (+document.getElementById('steuer').value || 0) / 100;
+      const helferNach = document.getElementById('helfer_nach').checked;
+
+      const anfahrt = km * 2 * 0.5;
+      const arbeitslohn = stunden * lohn;
+      const brutto = material + anfahrt + aufwand + arbeitslohn + verpflegung + angebot + extern + extra;
+      const kosten = material + anfahrt + aufwand + verpflegung + angebot + extern + extra;
+      const gewinn = brutto - kosten;
+
+      let helfer_betrag = 0, steuerlast = 0, netto = 0;
+      if (helferNach) {
+        steuerlast = gewinn * steuer;
+        netto = gewinn - steuerlast;
+        helfer_betrag = netto * helfer;
+        netto -= helfer_betrag;
+      } else {
+        helfer_betrag = gewinn * helfer;
+        const vorsteuer = gewinn - helfer_betrag;
+        steuerlast = vorsteuer * steuer;
+        netto = vorsteuer - steuerlast;
+      }
+
+      document.getElementById('output').innerHTML = `
+        <p><strong>Bruttopreis für Kunden:</strong> ${brutto.toFixed(2)} €</p>
+        <p><strong>Netto-Gewinn:</strong> ${netto.toFixed(2)} €</p>
+        <p>Helferlohn: ${helfer_betrag.toFixed(2)} € (${helferNach ? "nach Steuer" : "vor Steuer"})</p>
+        <p>Steuerlast: ${steuerlast.toFixed(2)} €</p>
+      `;
+    }
+  </script>
+</body>
+</html>
